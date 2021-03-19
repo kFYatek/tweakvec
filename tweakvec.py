@@ -219,7 +219,7 @@ class VecVideoStandard(enum.Enum):
                         + f'default subcarrier frequency: {FrequencyPreset.PAL_M} Hz (227.25 * fH)',
             self.PAL_N: '625 lines, QAM with phase alternation; default subcarrier frequency: ' \
                         + f'{FrequencyPreset.PAL} Hz (229.2516 * fH), otherwise identical to regular PAL',
-            self.SECAM: f'625 lines, FM sequantially alternating between Dr (default fSC = {FrequencyPreset.SECAM_DR}' \
+            self.SECAM: f'625 lines, FM sequentially alternating between Dr (default fSC = {FrequencyPreset.SECAM_DR}' \
                         + f' Hz = 282 * fH) and Db (default fSC = {FrequencyPreset.SECAM_DB} Hz = 272 * fH)'
         }[self]
 
@@ -320,7 +320,7 @@ class Configuration:
         typing.Optional[float],
         'Subcarrier frequency in Hz (for SECAM: Dr center frequency); non-positive value resets to default'] = None
     secam_fb: typing.Annotated[
-        typing.Optional[float], 'Db center frequncy for SECAM in Hz; non-positive value resets to default'] = None
+        typing.Optional[float], 'Db center frequency for SECAM in Hz; non-positive value resets to default'] = None
     pedestal: typing.Annotated[typing.Optional[bool], 'Enable pedestal (525-line modes only)'] = None
     enable_luma: typing.Annotated[typing.Optional[bool], 'Enable luminance output'] = None
     enable_chroma: typing.Annotated[
@@ -573,7 +573,7 @@ class TweakVecContext(contextlib.closing):
                 elif config.chroma_shift < 0:
                     luma_shift = -config.chroma_shift
                 config0 = set_masked_int('positive chroma_shift', config0, Config0.CDEL_MASK, chroma_shift)
-                config0 = set_masked_int('negative chroma shift', config0, Config0.YDEL_MASK, luma_shift)
+                config0 = set_masked_int('negative chroma_shift', config0, Config0.YDEL_MASK, luma_shift)
 
         freq = None
         if config.fsc is not None:
