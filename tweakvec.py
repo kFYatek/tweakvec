@@ -38,6 +38,7 @@ ArmMemoryRange = collections.namedtuple('ArmMemoryRange', ['child_address', 'par
 class VideoCoreModel(enum.Enum):
     VIDEOCORE4 = enum.auto()
     VIDEOCORE6 = enum.auto()
+    VIDEOCORE7 = enum.auto()
 
 
 class ArmMemoryMapper:
@@ -124,8 +125,12 @@ class VecPixelValveAccessor(MemoryMappedAccessor):
             path = mapper.get_symbol_path('pixelvalve3')
             self.model = VideoCoreModel.VIDEOCORE6
         except FileNotFoundError:
-            path = mapper.get_symbol_path('pixelvalve2')
-            self.model = VideoCoreModel.VIDEOCORE4
+            try:
+                path = mapper.get_symbol_path('pixelvalve2')
+                self.model = VideoCoreModel.VIDEOCORE4
+            except FileNotFoundError:
+                path = mapper.get_symbol_path('pixelvalve1')
+                self.model = VideoCoreModel.VIDEOCORE7
 
         super().__init__(memfd, mapper.map_path_address(path))
 
@@ -147,13 +152,11 @@ class VecPixelValveAccessor(MemoryMappedAccessor):
 class VecAccessor(MemoryMappedAccessor):
     def __init__(self, memfd, mapper: ArmMemoryMapper, model: VideoCoreModel):
         # We should normally use address = mapper.map_symbol_address('vec'),
-        # but on a Raspberry Pi 4 this address is wrong
+        # but on some Raspberry Pi 4 kernels this address is wrong
         if model == VideoCoreModel.VIDEOCORE6:
-            physical_address = 0x7ec13000
+            super().__init__(memfd, mapper.map_address(0x7ec13000))
         else:
-            physical_address = 0x7e806000
-
-        super().__init__(memfd, mapper.map_address(physical_address))
+            super().__init__(memfd, mapper.map_symbol_address('vec'))
 
     wse_reset = MemoryMappedAccessor.Register(0xc0)
     wse_control = MemoryMappedAccessor.Register(0xc4)
