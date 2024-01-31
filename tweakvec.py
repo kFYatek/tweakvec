@@ -220,7 +220,7 @@ class VecVideoStandard(enum.Enum):
             self.PAL_M: '525 lines, QAM with phase alternation; ' \
                         + f'default subcarrier frequency: {FrequencyPreset.PAL_M} Hz (227.25 * fH)',
             self.PAL_N: '625 lines, QAM with phase alternation; default subcarrier frequency: ' \
-                        + f'{FrequencyPreset.PAL} Hz (229.2516 * fH), otherwise identical to regular PAL',
+                        + f'{FrequencyPreset.PAL_N} Hz (229.2516 * fH), otherwise identical to regular PAL',
             self.SECAM: f'625 lines, FM sequentially alternating between Dr (default fSC = {FrequencyPreset.SECAM_DR}' \
                         + f' Hz = 282 * fH) and Db (default fSC = {FrequencyPreset.SECAM_DB} Hz = 272 * fH)'
         }[self]
