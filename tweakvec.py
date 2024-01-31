@@ -6,7 +6,6 @@ import contextlib
 import copy
 import ctypes
 import dataclasses
-import distutils.util
 import enum
 import mmap
 import os
@@ -713,6 +712,27 @@ class TweakVecContext(contextlib.closing):
             self.pv.horzb = horzb
 
 
+def _strtobool(value):
+    _MAP = {
+        'y': True,
+        'yes': True,
+        't': True,
+        'true': True,
+        'on': True,
+        '1': True,
+        'n': False,
+        'no': False,
+        'f': False,
+        'false': False,
+        'off': False,
+        '0': False
+    }
+    try:
+        return _MAP[str(value).lower()]
+    except KeyError:
+        raise ValueError(str(value) + ' is not a valid bool value')
+
+
 def _parse_args(argv=None):
     class NewlineAwareFormatter(argparse.HelpFormatter):
         def _format_action(self, *args, **kwargs):
@@ -791,7 +811,7 @@ def _parse_args(argv=None):
         else:
             metavar = field_type.__name__.upper()
             if field_type is bool:
-                field_type = lambda x: bool(distutils.util.strtobool(x))
+                field_type = _strtobool
             parser.add_argument(argname, type=field_type, help=help, metavar=metavar)
 
     return parser.parse_args(argv)
