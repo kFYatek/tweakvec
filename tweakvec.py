@@ -782,15 +782,9 @@ def _parse_args(argv=None):
     parser = argparse.ArgumentParser(description='Tweak settings of the Raspberry Pi composite video encoder',
                                      formatter_class=NewlineAwareFormatter)
 
-    preset_arg = add_enum_argument(
+    add_enum_argument(
         parser, '--preset', Preset,
         help='Preset of one of common color formats to use before applying individual tweaks')
-    preset_arg.help += '; available settings:'
-    for choice in preset_arg.choices:
-        preset_arg.help += '\n\n' + choice
-        preset = getattr(Preset, choice.replace('-', '_'))
-        if preset.help is not None:
-            preset_arg.help += ' - ' + preset.help
 
     parser.add_argument('--reset', action='store_true',
                         help='Reset all settings to defaults before applying anything else')
