@@ -3,6 +3,123 @@
 This is a utility for reconfiguring VEC, the composite video encoder on the
 Raspberry Pi.
 
+## ATTENTION! You probably don't need this!
+
+Since 2021, the Raspberry Pi Foundation's fork of the Linux kernel includes
+robust support for the VEC features, including all the supported color encoding
+standards. Since early 2023, this is also included in the upstream kernel, along
+with kernel-wide overhaul of support for composite video.
+
+TweakVec might still be useful if you want to play with advanced settings,
+custom subcarrier frequencies etc. But **if you only want to enable one of the
+"less standard" modes like `NTSC-J`, `NTSC-443`, `PAL-M`, `PAL-N`, `PAL60` or
+`SECAM` (as well as regular `PAL` and `NTSC`), you can use the kernel features
+instead and don't need TweakVec!**
+
+**⚠️ IF YOU'RE A MAINTAINER OF A SOFTWARE PACKAGE THAT SWITCHES THE RASPBERRY
+PI'S COMPOSITE OUTPUT TO ONE OF THE AFOREMENTIONED MODES, YOU ARE STRONGLY
+ENCOURAGED TO MOVE AWAY FROM TWEAKVEC AND USE KERNEL'S NATIVE SUPPORT INSTEAD
+⚠️**
+
+### Switching composite color standards in the kernel
+
+The following instructions are valid for Raspberry Pi 4 and older; see below if
+you're using a Raspberry Pi 5.
+
+**If you're using the Raspberry Pi Foundation's kernel, branch 5.10 or newer,**
+you  can select your preferred composite color standard:
+
+* At boot, by adding `vc4.tv_norm={mode}` to the kernel command line (configured
+  by the `cmdline.txt` file on the boot partition for most distributions)
+* At runtime, by setting the `mode` DRM property; for example under Xorg, you
+  can use `xrandr --output Composite-1 --set mode {mode}`
+
+Supported values you can substitute for `{mode}` are: `NTSC`, `NTSC-J`,
+`NTSC-443`, `PAL`, `PAL-M`, `PAL-N`, `PAL60` (since kernel 6.3, replaced with
+`PAL-60` with a dash - but read on) and `SECAM`.
+
+**If you're using Linux kernel version 6.3 or newer** (either upstream,
+Raspberry Pi Foundation, or any other release), you can use the native
+kernel-wide support for composite video encodings. You can select your preferred
+standard:
+
+* At boot, by adding `video=Composite-1:tv_mode={mode}` (or together with the
+  screen resolution, e.g. `video=Composite-1:720x480i,tv_mode={mode}`) to the
+  kernel command line (configured by the `cmdline.txt` file on the boot
+  partition for most distributions targeting the Raspberry Pi)
+* At runtime, by setting the `TV mode` DRM property; for example under Xorg, you
+  can use `xrandr --output Composite-1 --set "TV mode" {mode}`
+
+Supported values you can substitute for `{mode}` in this case are: `NTSC`,
+`NTSC-J`, `NTSC-443`, `PAL`, `PAL-M`, `PAL-N`, `PAL60` and `SECAM`. **Note
+that there is no explicit PAL60 option - to achieve that mode, just use `PAL`
+together with a 480i/240p resolution,** e.g.
+`video=Composite-1:720x480i,tv_mode=PAL` on the kernel command line or
+`xrandr --output Composite-1 --mode 720x480i --set "TV mode" PAL` under Xorg.
+
+**NOTE:** If you set the PAL60 mode using the `video=` kernel command line
+option, it will set it for the text console, but it will **NOT** be set as the
+preferred mode for other programs, like Xorg. You will need to configure those
+separately.
+
+**NOTE:** The early boot (the rainbow square and early kernel messages, if any)
+will be displayed in the mode set using `sdtv_mode` in `config.txt`, which is
+NTSC by default. The Pi will switch to your preferred mode after a couple of
+seconds, when the kernel-mode driver is initialized.
+
+### Note about Raspberry Pi 5
+
+The BCM2712 chip present in the Pi 5 no longer contains a composite video
+encoder - a completely different one has been added as part of the RP1
+southbridge chipset, designed in-house by the Raspberry Pi Foundation. This
+encoder is completely incompatible with the old VEC, uses a different kernel
+driver, and **will never be supported by TweakVec.**
+
+There might one day be a similar but separate program for the Pi 5 but I have
+no immediate plans to make one. I don't have a Pi 5 at the moment so I wouldn't
+have means to test it anyway.
+
+Thankfully, the new encoder supports most of the same color encoding standards -
+SECAM is unfortunately not supported, but all the rest should work.
+
+* **If you're using Linux kernel version 6.1 through 6.5**, you can set the
+  preferred standard:
+
+  * At boot, by adding `drm-rp1-vec.tv_norm={mode}` to the kernel command line
+    (configured by the `cmdline.txt` file on the boot partition for most
+    distributions)
+
+  * At runtime, by setting the `mode` DRM property; for example under Xorg, you
+    can use `xrandr --output Composite-1 --set mode {mode}`
+
+  * Supported values for `{mode}` are: `NTSC`, `NTSC-J`, `NTSC-443`, `PAL`,
+   `PAL-M`, `PAL-N` and `PAL60`.
+
+* **If you're using Linux kernel version 6.6 or higher, released after February
+  2nd, 2024**, you can set the preferred standard:
+
+  * At boot, by adding `video=Composite-1:tv_mode={mode}` (or together with the
+    screen resolution, e.g. `video=Composite-1:720x480i,tv_mode={mode}`) to the
+    kernel command line (configured by the `cmdline.txt` file on the boot
+    partition for most distributions targeting the Raspberry Pi)
+
+  * At runtime, by setting the `TV mode` DRM property; for example under Xorg,
+    you can use `xrandr --output Composite-1 --set "TV mode" {mode}`
+
+  * Supported values for `{mode}` are: `NTSC`, `NTSC-J`, `NTSC-443`, `PAL`,
+   `PAL-M` and `PAL-N`.
+
+  * To get the PAL60 mode, just use `PAL` together with the 480i/240p mode, e.g.
+    by setting `video=Composite-1:720x480i,tv_mode=PAL` on the kernel command
+    line - but see the notes above.
+
+  * **NOTE:** Unlike the old `vc4` driver used on Pi 4 and older, the
+    `drm-rp1-vec` driver did **NOT** retain compatibility with the old style
+    settings. So depending on your kernel version, only one or the other style
+    of configuration will work.
+
+## Why TweakVec was created?
+
 The default NTSC and PAL modes are enough for most cases where you might want to
 output composite video, but the Pi's video encoder is actually capable of much
 more than that.
@@ -10,8 +127,6 @@ more than that.
 PAL-M was always broken in the official firmware, and things like PAL60 were
 never implemented properly, either. The Pi can do both of these, and even SECAM
 turned out to be implemented in hardware.
-
-## Why?
 
 The factory NTSC and PAL modes cover most typical cases for a composite output.
 So why you might want to use this tool?
@@ -28,6 +143,9 @@ So why you might want to use this tool?
   and relative horizontal position of luminance and chrominance signals.
 * Playing with obsolete tech is fun ;) I personally find SECAM artifacts
   charming, even if they're objectively awful ;)
+
+TweakVec was also used as a playground to research the VEC's capabilities when
+developing proper support for its features in the kernel.
 
 ## Usage
 
