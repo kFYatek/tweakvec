@@ -38,7 +38,6 @@ ArmMemoryRange = collections.namedtuple('ArmMemoryRange', ['child_address', 'par
 class VideoCoreModel(enum.Enum):
     VIDEOCORE4 = enum.auto()
     VIDEOCORE6 = enum.auto()
-    VIDEOCORE7 = enum.auto()
 
 
 class ArmMemoryMapper:
@@ -125,12 +124,8 @@ class VecPixelValveAccessor(MemoryMappedAccessor):
             path = mapper.get_symbol_path('pixelvalve3')
             self.model = VideoCoreModel.VIDEOCORE6
         except FileNotFoundError:
-            try:
-                path = mapper.get_symbol_path('pixelvalve2')
-                self.model = VideoCoreModel.VIDEOCORE4
-            except FileNotFoundError:
-                path = mapper.get_symbol_path('pixelvalve1')
-                self.model = VideoCoreModel.VIDEOCORE7
+            path = mapper.get_symbol_path('pixelvalve2')
+            self.model = VideoCoreModel.VIDEOCORE4
 
         super().__init__(memfd, mapper.map_path_address(path))
 
@@ -853,7 +848,7 @@ def _main(argv=None):
 
         ctx().apply(config, force)
     except FileNotFoundError as e:
-        sys.stderr.write(f'{e}\nAre you running on a Raspberry Pi?\n')
+        sys.stderr.write(f'{e}\nAre you running on a Raspberry Pi 4 or older?\n')
         return -1
     except PermissionError as e:
         sys.stderr.write(f'{e}\nYou must be root or have access to /dev/mem to run tweakvec\n')
